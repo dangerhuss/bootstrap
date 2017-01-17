@@ -1,6 +1,8 @@
 # bootstrap
 Bootstrap is used to symlink dotfiles into the correct location.
 
+[![GoDoc](https://godoc.org/github.com/dangerhuss/bootstrap?status.svg)](https://godoc.org/github.com/dangerhuss/bootstrap)
+
 ## Usage
 Bootstrap searches for json files named `links.json` under the dotfile source directory specified in the `$DOT` environment variable or the `--dry` command line option.
 
