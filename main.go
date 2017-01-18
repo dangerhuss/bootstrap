@@ -129,18 +129,6 @@ func (b *Bootstrap) Walk(dir string) error {
 	return nil
 }
 
-type LinkResult struct {
-	Link Link
-	Err  error
-}
-
-func (r LinkResult) String() string {
-	if r.Err != nil {
-		return fmt.Sprintf("%v: %v", r.Err, r.Link)
-	}
-	return r.Link.String()
-}
-
 // Link adds the links from each of the DotDirs to the links chan. If an error occurs while getting a DotDirs links, the error will be added to the errors chan.
 func (b *Bootstrap) Link(links chan Link, errors chan error) {
 	toLinks := func(l Link) {
