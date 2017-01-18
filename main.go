@@ -38,11 +38,11 @@ func (l Link) cmd(force bool) string {
 
 // Clean replaces the environment variables in the source and destination paths with the values.
 func (l *Link) Clean() {
-	l.Src = CleanPath(l.Src)
-	l.Dest = CleanPath(l.Dest)
+	l.Src = cleanPath(l.Src)
+	l.Dest = cleanPath(l.Dest)
 }
 
-func CleanPath(path string) string {
+func cleanPath(path string) string {
 	path = filepath.Clean(path)
 	hasLeadingSlash := strings.HasPrefix(path, "/")
 	var cleanPath []string
