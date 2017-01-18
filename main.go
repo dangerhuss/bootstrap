@@ -12,12 +12,14 @@ import (
 	"sync"
 )
 
+// Input holds the user settable values.
 type Input struct {
 	Dir   string
 	Dry   bool
 	Force bool
 }
 
+// Link is a single symlink. A source and destination are required
 type Link struct {
 	Src  string
 	Dest string
@@ -34,6 +36,7 @@ func (l Link) cmd(force bool) string {
 	return fmt.Sprintf("ls -s %v %v", l.Src, l.Dest)
 }
 
+// Clean replaces the environment variables in the source and destination paths with the values.
 func (l *Link) Clean() {
 	l.Src = CleanPath(l.Src)
 	l.Dest = CleanPath(l.Dest)
@@ -56,6 +59,7 @@ func CleanPath(path string) string {
 	return path
 }
 
+// Symlink creates a symlink using the Src and Dest. Dest will be removed if force is set.
 func (l *Link) Symlink(force bool) error {
 	if force {
 		err := os.Remove(l.Dest)
@@ -66,11 +70,13 @@ func (l *Link) Symlink(force bool) error {
 	return os.Symlink(l.Src, l.Dest)
 }
 
+// DotDir is a directory containing a links file. The paths in the links file, if not absolute, will be relative to the Path attribute.
 type DotDir struct {
 	Path     string
 	LinkFile string
 }
 
+// Links parses a list of links from the links file. The found links will be cleaned and returned. An error will be returned if parsing the links file fails.
 func (d DotDir) Links() (links []Link, err error) {
 	f, err := os.Open(d.LinkFile)
 	if err != nil {
@@ -94,10 +100,12 @@ func (d DotDir) Links() (links []Link, err error) {
 	return
 }
 
+// Bootstrap manages a list of files that need to be symlinked.
 type Bootstrap struct {
 	DotDirs []DotDir
 }
 
+// AddDir adds a DotDir to the DotDirs given the directory path and path to the links file.
 func (b *Bootstrap) AddDir(dir, links string) {
 	b.DotDirs = append(b.DotDirs, DotDir{
 		Path:     dir,
@@ -105,6 +113,7 @@ func (b *Bootstrap) AddDir(dir, links string) {
 	})
 }
 
+// Walk traverses the specified directory. Any directories found containing a links file will be added to the DotDirs attribute. An error will be returned if the walking fails.
 func (b *Bootstrap) Walk(dir string) error {
 	err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
 		// Check for link file
@@ -132,6 +141,7 @@ func (r LinkResult) String() string {
 	return r.Link.String()
 }
 
+// Link adds the links from each of the DotDirs to the links chan. If an error occurs while getting a DotDirs links, the error will be added to the errors chan.
 func (b *Bootstrap) Link(links chan Link, errors chan error) {
 	toLinks := func(l Link) {
 		if links != nil {
@@ -160,7 +170,10 @@ func (b *Bootstrap) Link(links chan Link, errors chan error) {
 	wg.Wait()
 }
 
+// DotEnv is the name of the environment variable signifying the location of the dotfiles needing bootstrapping.
 const DotEnv = "DOT"
+
+// LinkFile is the name the file describing symlinks relative to the current directory.
 const LinkFile = "links.json"
 
 func main() {
@@ -177,23 +190,28 @@ func main() {
 	flag.BoolVar(&i.Force, "force", i.Force, "Overwrite existing links.")
 	flag.Parse()
 
-	b := &Bootstrap{}
 
 	dir, err := filepath.Abs(i.Dir)
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	// Create and populate the Bootstrap DotDirs
+	b := &Bootstrap{}
 	err = b.Walk(dir)
 	if err != nil {
 		log.Fatal(err)
 	}
 
+	// Create the needed chans
 	links := make(chan Link)
 	errors := make(chan error)
 
 	wg := new(sync.WaitGroup)
-	wg.Add(1)
+	wg.Add(1) // Add 1 for the single go routine listening on the above chans
 	messages := map[string][]string{}
+
+	// Spawn a go routine to create the desired links
 	go func(messages map[string][]string) {
 		defer wg.Done()
 		var linksDone, errorsDone bool
@@ -201,14 +219,19 @@ func main() {
 			select {
 			case link, ok := <-links:
 				if !ok {
+					// The links chan has been closed.
 					linksDone = true
 					continue
 				}
+
 				if i.Dry {
+					// Add the ln commands to the messages map.
 					a := messages["Commands"]
 					messages["Commands"] = append(a, link.cmd(i.Force))
 					continue
 				}
+
+				// Write the symlink. Use the user specified force flag.
 				err := link.Symlink(i.Force)
 				if err != nil {
 					if lerr, ok := err.(*os.LinkError); ok {
@@ -217,23 +240,33 @@ func main() {
 					}
 					continue
 				}
+				// Add the newly created Link string to the messages map.
 				a := messages["Successes"]
 				messages["Successes"] = append(a, link.String())
 			case err, ok := <-errors:
 				if !ok {
+					// The errors chan has been closed
 					errorsDone = true
 					continue
 				}
+				// Add the bootstrap error to the messages map.
 				a := messages["Errors"]
 				messages["Errors"] = append(a, err.Error())
 			}
 		}
 	}(messages)
 
+	// Kick off the links method.
 	b.Link(links, errors)
+
+	// Links only returns once all the links or errors
+	// have been added to the respective chan.We can
+	// safley close the links and errors chans.
 	close(links)
 	close(errors)
+	// Wait for all the symlinks to be created.
 	wg.Wait()
+	// Print out all the messages
 	for header, msgs := range messages {
 		if len(messages) > 1 {
 			fmt.Println(header + ":")
