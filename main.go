@@ -170,14 +170,30 @@ func main() {
 		Dry:   false,
 		Force: false,
 	}
-	if i.Dir == "" {
-		i.Dir = "../"
-	}
-	flag.StringVar(&i.Dir, "dir", i.Dir, "The dotfiles source.")
-	flag.BoolVar(&i.Dry, "dry", i.Dry, "Only print out the changes.")
-	flag.BoolVar(&i.Force, "force", i.Force, "Overwrite existing links.")
-	flag.Parse()
+	flag.Usage = func() {
+		fmt.Print(`Bootstrap : github.com/dangerhuss/bootstrap
 
+Blah blah blah blah bootstrap blah blah blah.
+
+Options:
+-d -dir    The dotfiles source directory that needs bootstrapping.
+-n -dry    Print out the ln commands instead of creating the links.
+-f -force  Overwrite existing links.
+
+Source: github.com/dangerhuss/bootstrap/issues
+License: MIT License Copyright (c) 2017 Andrew Huss
+
+`)
+	}
+	flag.StringVar(&i.Dir, "dir", i.Dir, "")
+	flag.StringVar(&i.Dir, "d", i.Dir, "")
+
+	flag.BoolVar(&i.Dry, "dry", i.Dry, "")
+	flag.BoolVar(&i.Dry, "n", i.Dry, "")
+
+	flag.BoolVar(&i.Force, "force", i.Force, "")
+	flag.BoolVar(&i.Force, "f", i.Force, "")
+	flag.Parse()
 
 	dir, err := filepath.Abs(i.Dir)
 	if err != nil {
