@@ -264,5 +264,7 @@ func main() {
 		}
 		fmt.Println(strings.Join(msgs, "\n"))
 	}
-	fmt.Println("Changes will take effect after sourcing your .*shrc")
+	if len(messages) > 0 {
+		fmt.Println("Changes will take effect after sourcing your .*shrc")
+	}
 }
