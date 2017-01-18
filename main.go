@@ -223,9 +223,12 @@ func main() {
 				err := link.Symlink(i.Force)
 				if err != nil {
 					if lerr, ok := err.(*os.LinkError); ok {
-						a := messages["Failures"]
-						messages["Failures"] = append(a, fmt.Sprintf("%v: %v", lerr.Err, link))
+						// Grab the err causing the LinkError
+						err = lerr.Err
 					}
+					// Add the Symlink error to the messages map.
+					a := messages["Failures"]
+					messages["Failures"] = append(a, fmt.Sprintf("%v: %v", err, link))
 					continue
 				}
 				// Add the newly created Link string to the messages map.
