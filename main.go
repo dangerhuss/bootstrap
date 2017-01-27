@@ -31,9 +31,9 @@ func (l Link) String() string {
 
 func (l Link) cmd(force bool) string {
 	if force {
-		return fmt.Sprintf("ls -sf %v %v", l.Src, l.Dest)
+		return fmt.Sprintf("ln -sf %v %v", l.Src, l.Dest)
 	}
-	return fmt.Sprintf("ls -s %v %v", l.Src, l.Dest)
+	return fmt.Sprintf("ln -s %v %v", l.Src, l.Dest)
 }
 
 // Clean replaces the environment variables in the source and destination paths with the values.
