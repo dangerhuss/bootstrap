@@ -32,7 +32,7 @@ $ cat links.json
 }
 $
 $ bootstrap --dry
-ls -s /Users/dangerhuss/src/dotfiles/zsh/zshrc.zsh /Users/dangerhuss/.zshrc
+ln -s /Users/dangerhuss/src/dotfiles/zsh/zshrc.zsh /Users/dangerhuss/.zshrc
 Changes will take effect after sourcing your .*shrc-force
 $
 $ bootstrap
